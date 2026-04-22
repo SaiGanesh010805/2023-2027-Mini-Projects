@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>IOT Forensic Dashboard</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <style>
+        body { background: #f4f7f6; }
+        .header-bg { background: #2c3e50; color: white; padding: 20px; text-align: center; }
+        .card { border-radius: 12px; border: none; box-shadow: 0 4px 15px rgba(0,0,0,0.05); background: white; }
+        .sensor-val { font-size: 2.5rem; font-weight: bold; color: #2980b9; }
+    </style>
+</head>
+<body>
+    <div class="header-bg"><h2>IOT Forensic Audit System</h2></div>
+    <div class="container mt-4">
+        <div class="row text-center mb-4">
+            <div class="col-md-6"><div class="card p-3"><h6>TEMPERATURE</h6><div class="sensor-val">{{ latest_temp }}°C</div></div></div>
+            <div class="col-md-6"><div class="card p-3"><h6>HUMIDITY</h6><div class="sensor-val" style="color: #27ae60;">{{ latest_hum }}%</div></div></div>
+        </div>
+        <div class="card p-4">
+            <h4>Security Forensic Audit Logs</h4>
+            <table class="table table-hover">
+                <thead class="thead-dark">
+                    <tr><th>Time</th><th>User</th><th>Action</th><th>Status</th><th>Network Address (Click to Verify)</th></tr>
+                </thead>
+                <tbody>
+                    {% for log in logs %}
+                    <tr>
+                        <td>{{ log.timestamp.strftime('%H:%M:%S') }}</td>
+                        <td>{{ log.user }}</td>
+                        <td>{{ log.action }}</td>
+                        <td>
+                            <span class="badge {% if 'SUSPICIOUS' in log.ai_status %}badge-warning{% else %}badge-success{% endif %}">
+                                {{ log.ai_status }}
+                            </span>
+                        </td>
+                        <td>
+                            {% if log.ip_address and log.ip_address not in ["127.0.0.1", "Hardware"] %}
+                                <a href="https://ipinfo.io/{{ log.ip_address }}" target="_blank" class="btn btn-sm btn-outline-primary">
+                                    {{ log.ip_address }} 🌐
+                                </a>
+                            {% else %}{{ log.ip_address }}{% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</body>
+</html>
