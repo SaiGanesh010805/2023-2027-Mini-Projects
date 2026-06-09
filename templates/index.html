@@ -1,51 +1,157 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>IOT Forensic Dashboard</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IoT Forensic Dashboard</title>
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        body { background: #f4f7f6; }
-        .header-bg { background: #2c3e50; color: white; padding: 20px; text-align: center; }
-        .card { border-radius: 12px; border: none; box-shadow: 0 4px 15px rgba(0,0,0,0.05); background: white; }
+        body { background: #f4f7f6; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        .header-bg { background: #2c3e50; color: white; padding: 30px; text-align: center; margin-bottom: 30px; }
+        .card { border-radius: 12px; border: none; box-shadow: 0 4px 15px rgba(0,0,0,0.05); background: white; margin-bottom: 20px; }
         .sensor-val { font-size: 2.5rem; font-weight: bold; color: #2980b9; }
+        .chart-container { position: relative; height: 220px; width: 100%; }
+        .badge-failed { background-color: #e74c3c; color: white; }
+        .badge-success { background-color: #27ae60; color: white; }
+        .badge-warning { background-color: #f39c12; color: white; }
     </style>
 </head>
 <body>
-    <div class="header-bg"><h2>IOT Forensic Audit System</h2></div>
-    <div class="container mt-4">
-        <div class="row text-center mb-4">
-            <div class="col-md-6"><div class="card p-3"><h6>TEMPERATURE</h6><div class="sensor-val">{{ latest_temp }}°C</div></div></div>
-            <div class="col-md-6"><div class="card p-3"><h6>HUMIDITY</h6><div class="sensor-val" style="color: #27ae60;">{{ latest_hum }}%</div></div></div>
+
+    <div class="header-bg">
+        <h2>IoT Forensic Audit & Security System</h2>
+        <p class="mb-0 text-muted" style="color: #b2bec3 !important;">Real-time Threat Monitoring & Telemetry Matrix</p>
+    </div>
+
+    <div class="container">
+        <div class="row text-center">
+            <div class="col-md-6">
+                <div class="card p-3">
+                    <h6 class="text-muted text-uppercase font-weight-bold">Latest Temperature</h6>
+                    <div class="sensor-val">{{ latest_temp }}°C</div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card p-3">
+                    <h6 class="text-muted text-uppercase font-weight-bold">Latest Humidity</h6>
+                    <div class="sensor-val" style="color: #27ae60;">{{ latest_hum }}%</div>
+                </div>
+            </div>
         </div>
+
+        <div class="row">
+            <div class="col-12">
+                <div class="card p-4">
+                    <h5 class="font-weight-bold mb-3">Authentication Anomaly Distribution</h5>
+                    <div class="chart-container">
+                        <canvas id="authChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <div class="card p-4">
-            <h4>Security Forensic Audit Logs</h4>
-            <table class="table table-hover">
-                <thead class="thead-dark">
-                    <tr><th>Time</th><th>User</th><th>Action</th><th>Status</th><th>Network Address (Click to Verify)</th></tr>
-                </thead>
-                <tbody>
-                    {% for log in logs %}
-                    <tr>
-                        <td>{{ log.timestamp.strftime('%H:%M:%S') }}</td>
-                        <td>{{ log.user }}</td>
-                        <td>{{ log.action }}</td>
-                        <td>
-                            <span class="badge {% if 'SUSPICIOUS' in log.ai_status %}badge-warning{% else %}badge-success{% endif %}">
-                                {{ log.ai_status }}
-                            </span>
-                        </td>
-                        <td>
-                            {% if log.ip_address and log.ip_address not in ["127.0.0.1", "Hardware"] %}
-                                <a href="https://ipinfo.io/{{ log.ip_address }}" target="_blank" class="btn btn-sm btn-outline-primary">
-                                    {{ log.ip_address }} 🌐
-                                </a>
-                            {% else %}{{ log.ip_address }}{% endif %}
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h5 class="font-weight-bold mb-0">Security Forensic Audit Logs</h5>
+                <div>
+                    <a href="{{ url_for('logout') }}" class="btn btn-outline-danger btn-sm">Term Session (Logout)</a>
+                </div>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead class="thead-dark">
+                        <tr>
+                            <th>Log ID</th>
+                            <th>Timestamp</th>
+                            <th>Identity Space</th>
+                            <th>Trigger Action</th>
+                            <th>AI Threat Assessment</th>
+                            <th>Target Source IP</th>
+                            <th>Proxy State</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for log in logs %}
+                        <tr>
+                            <td>#{{ log.id }}</td>
+                            <td>{{ log.timestamp.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+                            <td><strong>{{ log.user }}</strong></td>
+                            <td><code class="text-dark">{{ log.action }}</code></td>
+                            <td>
+                                <span class="badge {% if 'SECURE' in log.ai_status or 'AUTHORIZED' in log.ai_status %}badge-success{% else %}badge-failed{% endif %} p-2">
+                                    {{ log.ai_status }}
+                                </span>
+                            </td>
+                            <td>
+                                {% if log.ip_address in ["127.0.0.1", "localhost", "Hardware"] %}
+                                    <span class="badge badge-secondary p-1">{{ log.ip_address }}</span>
+                                {% else %}
+                                    <a href="https://ipinfo.io/{{ log.ip_address }}" target="_blank" class="btn btn-xs btn-outline-info py-0 px-1" style="font-size: 0.8rem;">
+                                        {{ log.ip_address }} 🌐
+                                    </a>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if log.vpn_detected %}
+                                    <span class="badge badge-warning">🚩 DETECTED</span>
+                                {% else %}
+                                    <span class="badge badge-light border text-muted">Clean</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                        {% if not logs %}
+                        <tr>
+                            <td colspan="7" class="text-center text-muted py-4">No structural user audit trails logged inside database context.</td>
+                        </tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
         </div>
     </div>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            let suspiciousEvents = 0;
+            let secureEvents = 0;
+
+            // Compute audit log indicators directly using safe substring tracking loops
+            {% for log in logs %}
+                {% if 'SECURE' in log.ai_status or 'AUTHORIZED' in log.ai_status %}
+                    secureEvents++;
+                {% else %}
+                    suspiciousEvents++;
+                {% endif %}
+            {% endfor %}
+
+            // Injection Fallbacks to keep the layout clean on a blank database configuration state
+            if (suspiciousEvents === 0 && secureEvents === 0) {
+                suspiciousEvents = 0;
+                secureEvents = 1; 
+            }
+
+            const ctx = document.getElementById('authChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Suspicious / Malicious', 'Secure Actions'],
+                    datasets: [{
+                        data: [suspiciousEvents, secureEvents],
+                        backgroundColor: ['#e74c3c', '#27ae60'],
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    maintainAspectRatio: false,
+                    responsive: true,
+                    plugins: {
+                        legend: { position: 'bottom' }
+                    }
+                }
+            });
+        });
+    </script>
 </body>
 </html>
